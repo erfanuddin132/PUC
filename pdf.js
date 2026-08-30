@@ -378,7 +378,18 @@ function savePDF() {
     saveToHistory();
 
     const element = document.getElementById('pdf-template');
-    
+
+    // html2canvas can fail to render content (including <img> tags)
+    // correctly when an ancestor has a CSS transform applied -- which
+    // is exactly what the mobile preview scaling uses. Reset it to
+    // full scale right before capture, then restore it afterwards.
+    const previousScale = document.documentElement.style.getPropertyValue('--preview-scale') || '1';
+    document.documentElement.style.setProperty('--preview-scale', 1);
+
+    function restoreScale() {
+        document.documentElement.style.setProperty('--preview-scale', previousScale);
+    }
+
     let filename = 'Assignment_Cover_Page.pdf';
     if (currentType === 'lab') {
         filename = 'Lab_Report_Cover_Page.pdf';
@@ -391,9 +402,18 @@ function savePDF() {
         margin:       0,
         filename:     filename,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
+        html2canvas:  { scale: 2, useCORS: true, allowTaint: true, imageTimeout: 0 },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(element).save();
+    // A short delay lets the browser apply the scale reset (and finish
+    // any pending image decode) before html2canvas starts capturing.
+    setTimeout(function() {
+        html2pdf().set(opt).from(element).save()
+            .then(restoreScale)
+            .catch(function(err) {
+                console.error('PDF export failed:', err);
+                restoreScale();
+            });
+    }, 50);
 }
