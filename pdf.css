@@ -219,13 +219,23 @@ button:hover { background-color: #1e40af; }
     margin: 0 auto;
 }
 
-/* Lets the fixed-size A4 page be panned/zoomed on narrow screens
-   instead of breaking the page layout. The page itself keeps its
-   real size, which is what html2pdf reads for export. */
+/* Scales the preview down to fit narrow screens. JS sets --preview-scale
+   and the wrapper's pixel height to match; .a4-page inside stays at its
+   real mm size always, so html2pdf exports at full, unscaled resolution. */
+.preview-scale-inner {
+    width: 210mm;
+    transform-origin: top center;
+    transform: scale(var(--preview-scale, 1));
+}
+
+/* Lets the fixed-size A4 page shrink to fit narrow screens.
+   JS sets --preview-scale; the page itself keeps its real mm size
+   underneath, which is what html2pdf reads for export. */
 .preview-scroll {
     width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
 }
 
 .inner-border {
@@ -436,6 +446,7 @@ button:hover { background-color: #1e40af; }
         margin: 0;
         width: 210mm;
         height: 297mm;
+        transform: none;
         page-break-after: avoid;
         page-break-inside: avoid;
     }
@@ -488,5 +499,9 @@ button:hover { background-color: #1e40af; }
 
     .button-container {
         flex-direction: column;
+    }
+
+    .preview-scroll {
+        padding: 0 8px;
     }
 }
